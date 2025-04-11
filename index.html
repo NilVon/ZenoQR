@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ZenoQR Resto</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-image: url('https://w0.peakpx.com/wallpaper/514/512/HD-wallpaper-indian-restaurant-san-francisco-deccan-house-sf-north-indian-food.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: #fff;
+      backdrop-filter: blur(5px);
+    }
+
+    h1, h2, #table-header {
+      color: #ffe082;
+      text-shadow: 1px 1px 2px #000;
+    }
+
+    p {
+      color: #ffecb3;
+      text-shadow: 1px 1px 1px #000;
+    }
+
+    .menu-list {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .menu-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: background 0.3s, border 0.3s;
+    }
+
+    .menu-list li:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .plus, .minus {
+      padding: 4px 10px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #ff9800;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      transition: background 0.3s;
+    }
+
+    .plus:hover, .minus:hover {
+      background-color: #e68900;
+    }
+
+    .quantity {
+      font-weight: bold;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    button.place-order {
+      margin-top: 30px;
+      padding: 12px 20px;
+      font-size: 18px;
+      background-color: #d32f2f;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button.place-order:hover {
+      background-color: #b71c1c;
+    }
+
+    #bill {
+      margin-top: 30px;
+      padding: 15px;
+      border: 2px dashed #fff;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      border-radius: 10px;
+      color: #fff;
+      transition: background 0.3s, border 0.3s;
+    }
+
+    #bill:hover{
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px dashed #ffeb3b;
+    }
+
+    #bill-items {
+      list-style: none;
+      padding-left: 0;
+      margin-bottom: 10px;
+    }
+
+    #bill-items li {
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+
+    #total {
+      color: #03eaff;
+      font-weight: bold;
+      font-size: 20px;
+    }
+
+    .reset-table {
+      margin-top: 5px;
+      background-color: #fbff06;
+      color: rgb(0, 0, 0);
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+
+    .reset-table:hover {
+      background-color: #e8ce0f;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: 22px;
+        text-align: center;
+      }
+
+      h2 {
+        font-size: 18px;
+        margin-top: 30px;
+      }
+
+      .menu-list li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px 12px;
+      }
+
+      .controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .plus, .minus {
+        font-size: 14px;
+        padding: 6px 10px;
+        flex: 1;
+      }
+
+      .quantity {
+        flex: 1;
+        text-align: center;
+      }
+
+      #bill {
+        font-size: 14px;
+      }
+
+      button.place-order {
+        width: 100%;
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h3 id="table-header">Table Number: Loading...</h3>
+  <button class="reset-table" onclick="resetTableNumber()">Reset Table Number</button>
+
+  <h1>Welcome to ZenoQR Resto 🍽️</h1>
+  <p>Your delicious gateway to quick, QR-based restaurant dining!</p>
+  <h2>Menu</h2>
+
+  <h2>Starters</h2>
+  <ul class="menu-list">
+    <li>Chicken Lollipop - ₹180<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Crispy Corn - ₹160<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Paneer Chilli - ₹170<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Veg Manchurian - ₹150<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+  </ul>
+
+  <h2>Main Course</h2>
+  <ul class="menu-list">
+    <li>Butter Chicken - ₹250<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Paneer Tikka - ₹200<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Mutton Biryani - ₹300<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Masala Dosa - ₹150<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Chicken Shawarma - ₹190<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Chole Bhature - ₹140<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Fish Curry Rice - ₹260<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+  </ul>
+
+  <h2>Desserts</h2>
+  <ul class="menu-list">
+    <li>Gulab Jamun (2 pcs) - ₹90<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Chocolate Brownie - ₹120<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Rasmalai - ₹110<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Ice Cream Sundae - ₹130<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+  </ul>
+
+  <h2>Drinks</h2>
+  <ul class="menu-list">
+    <li>Sweet Lime Soda - ₹60<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Mango Lassi - ₹80<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Cold Coffee - ₹100<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+    <li>Masala Chai - ₹40<div class="controls"><button class="minus">−</button><span class="quantity">0</span><button class="plus">+</button></div></li>
+  </ul>
+
+
+  <button class="place-order">Place Your Order</button>
+
+  <h2>Your Bill</h2>
+  <div id="bill">
+    <ul id="bill-items"></ul>
+    <h3>Total: ₹<span id="total">0</span></h3>
+  </div>
+
+  <script>
+    function getTableNumber() {
+      let tableNumber = localStorage.getItem('tableNumber');
+      if (!tableNumber) {
+        tableNumber = prompt("Enter your Table Number:");
+        if (tableNumber) {
+          localStorage.setItem('tableNumber', tableNumber);
+        }
+      }
+      return tableNumber;
+    }
+
+    function resetTableNumber() {
+      localStorage.removeItem('tableNumber');
+      location.reload();
+    }
+
+    window.onload = function() {
+      let tableNumber = getTableNumber();
+      if (tableNumber) {
+        document.getElementById('table-header').textContent = `Table Number: ${tableNumber}`;
+      } else {
+        document.getElementById('table-header').textContent = "Table Number: Not Set";
+      }
+    };
+
+    const prices = {
+      "Chicken Lollipop": 180, "Crispy Corn": 160, "Paneer Chilli": 170, "Veg Manchurian": 150,
+      "Butter Chicken": 250, "Paneer Tikka": 200, "Mutton Biryani": 300, "Masala Dosa": 150,
+      "Chicken Shawarma": 190, "Chole Bhature": 140, "Fish Curry Rice": 260,
+      "Gulab Jamun (2 pcs)": 90, "Chocolate Brownie": 120, "Rasmalai": 110, "Ice Cream Sundae": 130,
+      "Sweet Lime Soda": 60, "Mango Lassi": 80, "Cold Coffee": 100, "Masala Chai": 40
+    };
+
+    const plusBtns = document.querySelectorAll(".plus");
+    const minusBtns = document.querySelectorAll(".minus");
+    const totalSpan = document.getElementById("total");
+    const billList = document.getElementById("bill-items");
+    const cart = {};
+
+    function updateBill() {
+      billList.innerHTML = "";
+      let total = 0;
+      for (let item in cart) {
+        if (cart[item] > 0) {
+          const li = document.createElement("li");
+          li.textContent = `${item} x ${cart[item]} = ₹${cart[item] * prices[item]}`;
+          billList.appendChild(li);
+          total += cart[item] * prices[item];
+        }
+      }
+      totalSpan.textContent = total;
+    }
+
+    plusBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const li = btn.closest("li");
+        const itemName = li.textContent.split(" - ₹")[0].trim();
+        const qtySpan = li.querySelector(".quantity");
+
+        cart[itemName] = (cart[itemName] || 0) + 1;
+        qtySpan.textContent = cart[itemName];
+        updateBill();
+      });
+    });
+
+    minusBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const li = btn.closest("li");
+        const itemName = li.textContent.split(" - ₹")[0].trim();
+        const qtySpan = li.querySelector(".quantity");
+
+        if (cart[itemName] > 0) {
+          cart[itemName]--;
+          qtySpan.textContent = cart[itemName];
+          updateBill();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
