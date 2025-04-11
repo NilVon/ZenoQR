@@ -18,8 +18,9 @@
       backdrop-filter: blur(10px);
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
       min-height: 100vh;
+      padding-top: 30px;
     }
 
     .container {
@@ -28,14 +29,36 @@
       border-radius: 20px;
       padding: 30px;
       width: 95%;
-      max-width: 700px;
+      max-width: 800px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.37);
+      color: #000;
     }
 
     h1 {
       text-align: center;
-      color: #000;
+      margin-bottom: 10px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 20px;
+    }
+
+    .top-bar button {
+      background: #000;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .top-bar button:hover {
+      background: #333;
     }
 
     .order {
@@ -43,9 +66,8 @@
       border-radius: 15px;
       padding: 20px;
       margin-bottom: 15px;
-      color: #000;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
       position: relative;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
 
     .order-header {
@@ -82,7 +104,7 @@
       transform: scale(1.2);
     }
 
-    .modal {
+    .modal, .analysis-modal {
       position: fixed;
       top: 0;
       left: 0;
@@ -95,23 +117,20 @@
       z-index: 999;
     }
 
-    .modal-content {
+    .modal-content, .analysis-content {
       background: white;
       padding: 25px;
       border-radius: 10px;
       text-align: center;
-      max-width: 300px;
+      max-width: 400px;
       width: 90%;
       color: black;
-    }
-
-    .modal-content p {
-      margin-bottom: 20px;
     }
 
     .modal-buttons {
       display: flex;
       justify-content: space-around;
+      margin-top: 20px;
     }
 
     .modal-buttons button {
@@ -120,7 +139,6 @@
       border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
-      transition: 0.2s;
     }
 
     .confirm {
@@ -133,31 +151,34 @@
       color: white;
     }
 
-    .confirm:hover {
-      background-color: #45a049;
+    .confirm:hover { background-color: #45a049; }
+    .cancel:hover { background-color: #e53935; }
+
+    .analysis-content h3 {
+      margin-bottom: 10px;
     }
 
-    .cancel:hover {
-      background-color: #e53935;
+    .analysis-list {
+      max-height: 200px;
+      overflow-y: auto;
+      text-align: left;
+      margin-bottom: 10px;
     }
 
     @media (max-width: 500px) {
-      .order-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-      }
-
-      .done-btn {
-        align-self: flex-end;
-        margin-top: 10px;
-      }
+      .top-bar { flex-direction: column; gap: 10px; }
+      .order-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .done-btn { align-self: flex-end; margin-top: 10px; }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>📋 Manager Panel</h1>
+    <div class="top-bar">
+      <div><strong>Total Orders:</strong> <span id="orderCount">0</span></div>
+      <button onclick="openAnalysis()">📊 Analysis</button>
+    </div>
     <div id="ordersContainer"></div>
   </div>
 
@@ -172,105 +193,122 @@
     </div>
   </div>
 
-  <!-- Firebase Integration -->
+  <!-- Analysis Modal -->
+  <div class="analysis-modal" id="analysisModal">
+    <div class="analysis-content">
+      <h3>📊 Today's Summary</h3>
+      <div class="analysis-list" id="analysisList"></div>
+      <strong>Total Revenue:</strong> ₹<span id="totalRevenue">0</span><br><br>
+      <button class="cancel" onclick="closeAnalysis()">Close</button>
+    </div>
+  </div>
+
   <script type="module">
-    // Firebase SDKs
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Config
     const firebaseConfig = {
       apiKey: "AIzaSyDilZ_B4vbKN_xp7wQ5g_t-4GsBa9G9XVo",
       authDomain: "zenoqr-a6a34.firebaseapp.com",
       projectId: "zenoqr-a6a34",
-      storageBucket: "zenoqr-a6a34.firebasestorage.app",
+      storageBucket: "zenoqr-a6a34.appspot.com",
       messagingSenderId: "330735922897",
       appId: "1:330735922897:web:925a0dc805d69ed6831ff0"
     };
 
-    // Init Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let ordersData = [];
-    let selectedOrderId = null;
-    const container = document.getElementById("ordersContainer");
+   const prices = {
+      "Chicken Lollipop": 180, "Crispy Corn": 160, "Paneer Chilli": 170, "Veg Manchurian": 150,
+      "Butter Chicken": 250, "Paneer Tikka": 200, "Mutton Biryani": 300, "Masala Dosa": 150,
+      "Chicken Shawarma": 190, "Chole Bhature": 140, "Fish Curry Rice": 260,
+      "Gulab Jamun (2 pcs)": 90, "Chocolate Brownie": 120, "Rasmalai": 110, "Ice Cream Sundae": 130,
+      "Sweet Lime Soda": 60, "Mango Lassi": 80, "Cold Coffee": 100, "Masala Chai": 40
+    };
 
-    // Realtime Firestore updates
-    onSnapshot(collection(db, "orders"), (snapshot) => {
-      ordersData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      renderOrders();
-    });
+
+    let orders = [];
+    let selectedOrderId = null;
+
+    const ordersContainer = document.getElementById("ordersContainer");
+    const orderCountSpan = document.getElementById("orderCount");
 
     function renderOrders() {
-      container.innerHTML = "";
-
-      ordersData.forEach((order) => {
+      ordersContainer.innerHTML = "";
+      orderCountSpan.innerText = orders.length;
+      orders.forEach((order) => {
         const orderDiv = document.createElement("div");
         orderDiv.classList.add("order");
 
         const header = document.createElement("div");
         header.classList.add("order-header");
-
-        const tableLabel = document.createElement("span");
-        tableLabel.innerText = `Table #${order.table}`;
-
-        const itemCount = document.createElement("span");
-        itemCount.innerText = `${order.items.length} items`;
-
-        const doneBtn = document.createElement("button");
-        doneBtn.className = "done-btn";
-        doneBtn.innerText = "✅";
-        doneBtn.title = "Mark as Served";
-        doneBtn.onclick = () => {
-          selectedOrderId = order.id;
-          openModal();
-        };
-
-        const headerLeft = document.createElement("div");
-        headerLeft.style.flex = "1";
-        headerLeft.appendChild(tableLabel);
-
-        const headerRight = document.createElement("div");
-        headerRight.style.display = "flex";
-        headerRight.style.alignItems = "center";
-        headerRight.appendChild(itemCount);
-        headerRight.appendChild(doneBtn);
-
-        header.appendChild(headerLeft);
-        header.appendChild(headerRight);
+        header.innerHTML = `
+          <span>Table #${order.table}</span>
+          <div>
+            ${order.items.length} items
+            <button class="done-btn" title="Mark as Served" onclick="openModal('${order.id}')">✅</button>
+          </div>
+        `;
         orderDiv.appendChild(header);
 
-        order.items.forEach(item => {
+        order.items.forEach((item) => {
           const itemDiv = document.createElement("div");
           itemDiv.classList.add("item");
           itemDiv.innerHTML = `<span>${item.name}</span><span>Qty: ${item.quantity}</span>`;
           orderDiv.appendChild(itemDiv);
         });
 
-        container.appendChild(orderDiv);
+        ordersContainer.appendChild(orderDiv);
       });
     }
 
-    // Modal Functions
-    window.openModal = () => {
+    window.openModal = (id) => {
+      selectedOrderId = id;
       document.getElementById("confirmModal").style.display = "flex";
     };
 
     window.closeModal = () => {
-      document.getElementById("confirmModal").style.display = "none";
       selectedOrderId = null;
+      document.getElementById("confirmModal").style.display = "none";
     };
 
     window.confirmDelete = async () => {
       if (selectedOrderId) {
         await deleteDoc(doc(db, "orders", selectedOrderId));
-        selectedOrderId = null;
         closeModal();
       }
+    };
+
+    onSnapshot(collection(db, "orders"), (snapshot) => {
+      orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderOrders();
+    });
+
+    window.openAnalysis = () => {
+      const itemMap = {};
+      let total = 0;
+      orders.forEach(order => {
+        order.items.forEach(({ name, quantity }) => {
+          itemMap[name] = (itemMap[name] || 0) + quantity;
+          total += (prices[name] || 0) * quantity;
+        });
+      });
+
+      const analysisList = document.getElementById("analysisList");
+      analysisList.innerHTML = "";
+      Object.entries(itemMap).forEach(([name, qty]) => {
+        const div = document.createElement("div");
+        div.innerText = `${name}: ${qty}`;
+        analysisList.appendChild(div);
+      });
+
+      document.getElementById("totalRevenue").innerText = total;
+      document.getElementById("analysisModal").style.display = "flex";
+    };
+
+    window.closeAnalysis = () => {
+      document.getElementById("analysisModal").style.display = "none";
     };
   </script>
 </body>
