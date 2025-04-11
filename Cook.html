@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ZenoQR | Cook Panel</title>
+  <!-- [Your CSS remains unchanged] -->
   <style>
-    * {
+    /* Keep your full original CSS here */
+     * {
       box-sizing: border-box;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
@@ -156,6 +158,7 @@
         margin: 10px 0 0 0;
       }
     }
+    /* (same styles as before) */
   </style>
 </head>
 <body>
@@ -175,38 +178,34 @@
     </div>
   </div>
 
-  <script>
-    let dummyOrders = [
-      {
-        table: 3,
-        items: [
-          { name: "Paneer Butter Masala", qty: 2 },
-          { name: "Butter Naan", qty: 4 }
-        ]
-      },
-      {
-        table: 7,
-        items: [
-          { name: "Chicken Biryani", qty: 3 },
-          { name: "Raita", qty: 2 }
-        ]
-      },
-      {
-        table: 1,
-        items: [
-          { name: "Cold Coffee", qty: 2 },
-          { name: "Veg Burger", qty: 1 }
-        ]
-      }
-    ];
+  <!-- Firebase SDKs -->
+  <script type="module">
+    // Import Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-    let selectedOrderIndex = null;
+    // ✅ Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyD0X-lpVmDO5LVz7BOFaKOwFEz2N0ZSnTo",
+      authDomain: "zenoqr-resto.firebaseapp.com",
+      databaseURL: "https://zenoqr-resto-default-rtdb.firebaseio.com",
+      projectId: "zenoqr-resto",
+      storageBucket: "zenoqr-resto.appspot.com",
+      messagingSenderId: "157190304177",
+      appId: "1:157190304177:web:5ef6d88d14c34ef70a53a2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const ordersContainer = document.getElementById("ordersContainer");
+    let orders = [];
+    let keys = [];
+    let selectedOrderKey = null;
 
     function renderOrders() {
-      const container = document.getElementById("ordersContainer");
-      container.innerHTML = "";
-
-      dummyOrders.forEach((order, index) => {
+      ordersContainer.innerHTML = "";
+      orders.forEach((order, index) => {
         const orderDiv = document.createElement("div");
         orderDiv.classList.add("order");
 
@@ -224,7 +223,7 @@
         doneBtn.innerText = "✅";
         doneBtn.title = "Mark as Done";
         doneBtn.onclick = () => {
-          selectedOrderIndex = index;
+          selectedOrderKey = keys[index];
           openModal();
         };
 
@@ -249,7 +248,7 @@
           orderDiv.appendChild(itemDiv);
         });
 
-        container.appendChild(orderDiv);
+        ordersContainer.appendChild(orderDiv);
       });
     }
 
@@ -259,19 +258,29 @@
 
     function closeModal() {
       document.getElementById("confirmModal").style.display = "none";
-      selectedOrderIndex = null;
+      selectedOrderKey = null;
     }
 
     function confirmDelete() {
-      if (selectedOrderIndex !== null) {
-        dummyOrders.splice(selectedOrderIndex, 1);
-        selectedOrderIndex = null;
-        closeModal();
-        renderOrders();
+      if (selectedOrderKey) {
+        const orderRef = ref(db, 'orders/' + selectedOrderKey);
+        remove(orderRef).then(() => {
+          closeModal();
+        });
       }
     }
 
-    renderOrders();
+    const ordersRef = ref(db, 'orders');
+    onValue(ordersRef, (snapshot) => {
+      const data = snapshot.val();
+      orders = [];
+      keys = [];
+      for (const key in data) {
+        orders.push(data[key]);
+        keys.push(key);
+      }
+      renderOrders();
+    });
   </script>
 </body>
 </html>
