@@ -4,8 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ZenoQR | Manager Panel</title>
-  <!-- [STYLE OMITTED FOR BREVITY - SAME AS YOUR ORIGINAL] -->
- <style>
+  <style>
     * {
       box-sizing: border-box;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -155,18 +154,10 @@
       }
     }
   </style>
-  
 </head>
 <body>
   <div class="container">
     <h1>📋 Manager Panel</h1>
-    <div class="top-bar">
-      <div><strong>Total Orders:</strong> <span id="orderCount">0</span></div>
-      <div>
-        <button onclick="openAnalysis()">📊 Analysis</button>
-        <button onclick="openHistory()">🗓️ History</button>
-      </div>
-    </div>
     <div id="ordersContainer"></div>
   </div>
 
@@ -181,166 +172,105 @@
     </div>
   </div>
 
-  <!-- Analysis Modal -->
-  <div class="analysis-modal" id="analysisModal">
-    <div class="analysis-content">
-      <h3>📊 Today's Summary</h3>
-      <div class="analysis-list" id="analysisList"></div>
-      <strong>Total Revenue:</strong> ₹<span id="totalRevenue">0</span><br><br>
-      <button class="cancel" onclick="closeAnalysis()">Close</button>
-    </div>
-  </div>
-
-  <!-- History Modal -->
-  <div class="analysis-modal" id="historyModal">
-    <div class="analysis-content">
-      <h3>🗓️ Order History (12pm - 3am)</h3>
-      <div class="analysis-list" id="historyList"></div>
-      <button class="cancel" onclick="closeHistory()">Close</button>
-    </div>
-  </div>
-
+  <!-- Firebase Integration -->
   <script type="module">
+    // Firebase SDKs
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, deleteDoc, doc, addDoc, getDocs, query, where, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // Config
     const firebaseConfig = {
       apiKey: "AIzaSyDilZ_B4vbKN_xp7wQ5g_t-4GsBa9G9XVo",
       authDomain: "zenoqr-a6a34.firebaseapp.com",
       projectId: "zenoqr-a6a34",
-      storageBucket: "zenoqr-a6a34.appspot.com",
+      storageBucket: "zenoqr-a6a34.firebasestorage.app",
       messagingSenderId: "330735922897",
       appId: "1:330735922897:web:925a0dc805d69ed6831ff0"
     };
 
+    // Init Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const prices = { /* same item prices as before */ };
-
-    let orders = [];
+    let ordersData = [];
     let selectedOrderId = null;
+    const container = document.getElementById("ordersContainer");
 
-    const ordersContainer = document.getElementById("ordersContainer");
-    const orderCountSpan = document.getElementById("orderCount");
+    // Realtime Firestore updates
+    onSnapshot(collection(db, "orders"), (snapshot) => {
+      ordersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      renderOrders();
+    });
 
     function renderOrders() {
-      ordersContainer.innerHTML = "";
-      orderCountSpan.innerText = orders.length;
-      orders.forEach((order) => {
+      container.innerHTML = "";
+
+      ordersData.forEach((order) => {
         const orderDiv = document.createElement("div");
         orderDiv.classList.add("order");
 
         const header = document.createElement("div");
         header.classList.add("order-header");
-        header.innerHTML = `
-          <span>Table #${order.table}</span>
-          <div>
-            ${order.items.length} items
-            <button class="done-btn" title="Mark as Served" onclick="openModal('${order.id}')">✅</button>
-          </div>
-        `;
+
+        const tableLabel = document.createElement("span");
+        tableLabel.innerText = `Table #${order.table}`;
+
+        const itemCount = document.createElement("span");
+        itemCount.innerText = `${order.items.length} items`;
+
+        const doneBtn = document.createElement("button");
+        doneBtn.className = "done-btn";
+        doneBtn.innerText = "✅";
+        doneBtn.title = "Mark as Served";
+        doneBtn.onclick = () => {
+          selectedOrderId = order.id;
+          openModal();
+        };
+
+        const headerLeft = document.createElement("div");
+        headerLeft.style.flex = "1";
+        headerLeft.appendChild(tableLabel);
+
+        const headerRight = document.createElement("div");
+        headerRight.style.display = "flex";
+        headerRight.style.alignItems = "center";
+        headerRight.appendChild(itemCount);
+        headerRight.appendChild(doneBtn);
+
+        header.appendChild(headerLeft);
+        header.appendChild(headerRight);
         orderDiv.appendChild(header);
 
-        order.items.forEach((item) => {
+        order.items.forEach(item => {
           const itemDiv = document.createElement("div");
           itemDiv.classList.add("item");
           itemDiv.innerHTML = `<span>${item.name}</span><span>Qty: ${item.quantity}</span>`;
           orderDiv.appendChild(itemDiv);
         });
 
-        ordersContainer.appendChild(orderDiv);
+        container.appendChild(orderDiv);
       });
     }
 
-    window.openModal = (id) => {
-      selectedOrderId = id;
+    // Modal Functions
+    window.openModal = () => {
       document.getElementById("confirmModal").style.display = "flex";
     };
 
     window.closeModal = () => {
-      selectedOrderId = null;
       document.getElementById("confirmModal").style.display = "none";
+      selectedOrderId = null;
     };
 
     window.confirmDelete = async () => {
       if (selectedOrderId) {
-        const order = orders.find(o => o.id === selectedOrderId);
-        if (order) {
-          await addDoc(collection(db, "history"), {
-            ...order,
-            servedAt: serverTimestamp()
-          });
-        }
         await deleteDoc(doc(db, "orders", selectedOrderId));
+        selectedOrderId = null;
         closeModal();
       }
-    };
-
-    onSnapshot(collection(db, "orders"), (snapshot) => {
-      orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      renderOrders();
-    });
-
-    window.openAnalysis = () => {
-      const itemMap = {};
-      let total = 0;
-      orders.forEach(order => {
-        order.items.forEach(({ name, quantity }) => {
-          itemMap[name] = (itemMap[name] || 0) + quantity;
-          total += (prices[name] || 0) * quantity;
-        });
-      });
-
-      const analysisList = document.getElementById("analysisList");
-      analysisList.innerHTML = "";
-      Object.entries(itemMap).forEach(([name, qty]) => {
-        const div = document.createElement("div");
-        div.innerText = `${name}: ${qty}`;
-        analysisList.appendChild(div);
-      });
-
-      document.getElementById("totalRevenue").innerText = total;
-      document.getElementById("analysisModal").style.display = "flex";
-    };
-
-    window.closeAnalysis = () => {
-      document.getElementById("analysisModal").style.display = "none";
-    };
-
-    window.openHistory = async () => {
-      const historyRef = collection(db, "history");
-
-      const now = new Date();
-      const today12pm = new Date();
-      today12pm.setHours(12, 0, 0, 0);
-
-      const tomorrow3am = new Date();
-      if (now.getHours() < 3) tomorrow3am.setDate(tomorrow3am.getDate());
-      else tomorrow3am.setDate(tomorrow3am.getDate() + 1);
-      tomorrow3am.setHours(3, 0, 0, 0);
-
-      const q = query(historyRef, where("servedAt", ">=", Timestamp.fromDate(today12pm)), where("servedAt", "<=", Timestamp.fromDate(tomorrow3am)));
-      const snap = await getDocs(q);
-      const list = document.getElementById("historyList");
-      list.innerHTML = "";
-
-      if (snap.empty) {
-        list.innerHTML = "<i>No orders served in this time window.</i>";
-      } else {
-        snap.forEach(doc => {
-          const order = doc.data();
-          const div = document.createElement("div");
-          div.innerHTML = `<strong>Table #${order.table}</strong> - ${order.items.length} items`;
-          list.appendChild(div);
-        });
-      }
-
-      document.getElementById("historyModal").style.display = "flex";
-    };
-
-    window.closeHistory = () => {
-      document.getElementById("historyModal").style.display = "none";
     };
   </script>
 </body>
