@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ZenoQR | Manager Panel</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: url('https://static.vecteezy.com/system/resources/previews/056/641/165/non_2x/abstract-colorful-swirls-on-black-background-photo.jpeg') no-repeat center center fixed;
+      background-size: cover;
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 30px;
+      width: 95%;
+      max-width: 700px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.37);
+    }
+
+    h1 {
+      text-align: center;
+      color: #000;
+      margin-bottom: 20px;
+    }
+
+    .order {
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 15px;
+      color: #000;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      position: relative;
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .item {
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .item:last-child {
+      border-bottom: none;
+    }
+
+    .done-btn {
+      font-size: 24px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      outline: none;
+      transition: transform 0.2s;
+      margin-left: 10px;
+    }
+
+    .done-btn:hover {
+      transform: scale(1.2);
+    }
+
+    /* Modal Styles */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 300px;
+      width: 90%;
+      color: black;
+    }
+
+    .modal-content p {
+      margin-bottom: 20px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .modal-buttons button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .confirm {
+      background-color: #4caf50;
+      color: white;
+    }
+
+    .cancel {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .confirm:hover {
+      background-color: #45a049;
+    }
+
+    .cancel:hover {
+      background-color: #e53935;
+    }
+
+    @media (max-width: 500px) {
+      .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .done-btn {
+        align-self: flex-end;
+        margin-top: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📋 Manager Panel</h1>
+    <div id="ordersContainer"></div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div class="modal" id="confirmModal">
+    <div class="modal-content">
+      <p>Mark this order as served?</p>
+      <div class="modal-buttons">
+        <button class="confirm" onclick="confirmDelete()">Confirm</button>
+        <button class="cancel" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let dummyOrders = [
+      {
+        table: 5,
+        items: [
+          { name: "Pizza Margherita", qty: 1 },
+          { name: "Iced Tea", qty: 2 }
+        ]
+      },
+      {
+        table: 2,
+        items: [
+          { name: "Chicken Wings", qty: 2 },
+          { name: "Pepsi", qty: 1 }
+        ]
+      }
+    ];
+
+    let selectedOrderIndex = null;
+
+    function renderOrders() {
+      const container = document.getElementById("ordersContainer");
+      container.innerHTML = "";
+
+      dummyOrders.forEach((order, index) => {
+        const orderDiv = document.createElement("div");
+        orderDiv.classList.add("order");
+
+        const header = document.createElement("div");
+        header.classList.add("order-header");
+
+        const tableLabel = document.createElement("span");
+        tableLabel.innerText = `Table #${order.table}`;
+
+        const itemCount = document.createElement("span");
+        itemCount.innerText = `${order.items.length} items`;
+
+        const doneBtn = document.createElement("button");
+        doneBtn.className = "done-btn";
+        doneBtn.innerText = "✅";
+        doneBtn.title = "Mark as Served";
+        doneBtn.onclick = () => {
+          selectedOrderIndex = index;
+          openModal();
+        };
+
+        const headerLeft = document.createElement("div");
+        headerLeft.style.flex = "1";
+        headerLeft.appendChild(tableLabel);
+
+        const headerRight = document.createElement("div");
+        headerRight.style.display = "flex";
+        headerRight.style.alignItems = "center";
+        headerRight.appendChild(itemCount);
+        headerRight.appendChild(doneBtn);
+
+        header.appendChild(headerLeft);
+        header.appendChild(headerRight);
+        orderDiv.appendChild(header);
+
+        order.items.forEach(item => {
+          const itemDiv = document.createElement("div");
+          itemDiv.classList.add("item");
+          itemDiv.innerHTML = `<span>${item.name}</span><span>Qty: ${item.qty}</span>`;
+          orderDiv.appendChild(itemDiv);
+        });
+
+        container.appendChild(orderDiv);
+      });
+    }
+
+    function openModal() {
+      document.getElementById("confirmModal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("confirmModal").style.display = "none";
+      selectedOrderIndex = null;
+    }
+
+    function confirmDelete() {
+      if (selectedOrderIndex !== null) {
+        dummyOrders.splice(selectedOrderIndex, 1);
+        selectedOrderIndex = null;
+        closeModal();
+        renderOrders();
+      }
+    }
+
+    renderOrders();
+  </script>
+</body>
+</html>
