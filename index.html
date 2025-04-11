@@ -200,21 +200,6 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
-    @keyframes pulse {
-  0% {
-    transform: scale(1);
-    text-shadow: 0 0 5px #ffff00, 0 0 10px #ffff00;
-  }
-  50% {
-    transform: scale(1.1);
-    text-shadow: 0 0 10px #ffff00, 0 0 20px #ffff00;
-  }
-  100% {
-    transform: scale(1);
-    text-shadow: 0 0 5px #ffff00, 0 0 10px #ffff00;
-  }
-}
-
   </style>
 </head>
 <body>
@@ -382,103 +367,15 @@ confirmBtn.addEventListener('click', () => {
   thankYou.style.display = 'flex';
 
   // Optional: Hide thank-you message after 5 seconds
-    setTimeout(() => {
-  thankYouMessage.innerHTML = `
-    <div style="text-align:center;">
-      <div style="font-size:50px; color:#ffff00; animation: pulse 1s infinite;">
-        🕒
-      </div>
-      <p style="font-size:24px; color:#ffff00;">Tracking Order for Table ${localStorage.getItem('tableNumber')}</p>
-      <ul style="list-style:none; padding:0; color:#fff; font-size:18px;">
-        ${Object.entries(cart).map(([item, qty]) => `<li>${item} x ${qty}</li>`).join('')}
-      </ul>
-      <p style="margin-top:10px; color:#03eaff; font-size:20px;">Total: ₹${totalSpan.textContent}</p>
-    </div>
-  `;
-}, 2500);
+  setTimeout(() => {
+    thankYou.style.display = 'none';
+  }, 5000);
+});
+
+cancelBtn.addEventListener('click', () => {
+  popup.style.display = 'none';
+});
 
   </script>
-
-  <script>
-  // Continue from your 'updateBill()' function
-  function updateBill() {
-    billList.innerHTML = "";
-    let total = 0;
-    for (let item in cart) {
-      if (cart[item] > 0) {
-        const li = document.createElement("li");
-        li.textContent = `${item} x ${cart[item]} - ₹${cart[item] * prices[item]}`;
-        billList.appendChild(li);
-        total += cart[item] * prices[item];
-      }
-    }
-    totalSpan.textContent = total;
-  }
-
-  // Add Event Listeners for + and -
-  plusBtns.forEach(btn => {
-    btn.addEventListener("click", function () {
-      const quantityEl = this.previousElementSibling;
-      const itemName = this.closest("li").childNodes[0].textContent.trim().split(" - ")[0];
-      let currentQty = parseInt(quantityEl.textContent);
-      currentQty++;
-      quantityEl.textContent = currentQty;
-      cart[itemName] = currentQty;
-      updateBill();
-    });
-  });
-
-  minusBtns.forEach(btn => {
-    btn.addEventListener("click", function () {
-      const quantityEl = this.nextElementSibling;
-      const itemName = this.closest("li").childNodes[0].textContent.trim().split(" - ")[0];
-      let currentQty = parseInt(quantityEl.textContent);
-      if (currentQty > 0) {
-        currentQty--;
-        quantityEl.textContent = currentQty;
-        cart[itemName] = currentQty;
-        updateBill();
-      }
-    });
-  });
-
-  // Place Order Popup Logic
-  const placeOrderBtn = document.querySelector(".place-order");
-  const popup = document.getElementById("confirmation-popup");
-  const confirmBtn = document.getElementById("confirm-btn");
-  const cancelBtn = document.getElementById("cancel-btn");
-  const thankYouMessage = document.getElementById("thank-you-message");
-
-  placeOrderBtn.addEventListener("click", () => {
-    if (Object.keys(cart).length === 0 || Object.values(cart).every(qty => qty === 0)) {
-      alert("Please select at least one item before placing an order.");
-      return;
-    }
-    popup.style.display = "flex";
-  });
-
-  cancelBtn.addEventListener("click", () => {
-    popup.style.display = "none";
-  });
-
-  confirmBtn.addEventListener("click", () => {
-    popup.style.display = "none";
-    thankYouMessage.style.display = "flex";
-
-    // Add tracker after 2.5 seconds
-    setTimeout(() => {
-      thankYouMessage.innerHTML = `
-        <div style="text-align:center;">
-          <p style="font-size:24px; color:#ffff00;">🕒 Tracking Order for Table ${localStorage.getItem('tableNumber')}</p>
-          <ul style="list-style:none; padding:0; color:#fff;">
-            ${Object.entries(cart).map(([item, qty]) => `<li>${item} x ${qty}</li>`).join('')}
-          </ul>
-          <p style="margin-top:10px; color:#03eaff;">Total: ₹${totalSpan.textContent}</p>
-        </div>
-      `;
-    }, 2500);
-  });
-</script>
-
 </body>
 </html>
