@@ -178,134 +178,34 @@
     </div>
   </div>
 
-  <!-- Firebase SDKs -->
-  <script type="module">
-    // Import Firebase SDK
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+<!-- Firebase SDKs & Live Manager Logic -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // ✅ Your Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyD0X-lpVmDO5LVz7BOFaKOwFEz2N0ZSnTo",
-      authDomain: "zenoqr-resto.firebaseapp.com",
-      databaseURL: "https://zenoqr-resto-default-rtdb.firebaseio.com",
-      projectId: "zenoqr-resto",
-      storageBucket: "zenoqr-resto.appspot.com",
-      messagingSenderId: "157190304177",
-      appId: "1:157190304177:web:5ef6d88d14c34ef70a53a2"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyDilZ_B4vbKN_xp7wQ5g_t-4GsBa9G9XVo",
+    authDomain: "zenoqr-a6a34.firebaseapp.com",
+    projectId: "zenoqr-a6a34",
+    storageBucket: "zenoqr-a6a34.firebasestorage.app",
+    messagingSenderId: "330735922897",
+    appId: "1:330735922897:web:925a0dc805d69ed6831ff0"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    const ordersContainer = document.getElementById("ordersContainer");
-    let orders = [];
-    let keys = [];
-    let selectedOrderKey = null;
+  const ordersContainer = document.getElementById("ordersContainer");
+  const confirmModal = document.getElementById("confirmModal");
 
-    function renderOrders() {
-      ordersContainer.innerHTML = "";
-      orders.forEach((orders, index) => {
-        const ordersDiv = document.createElement("div");
-        orderDiv.classList.add("orders");
+  let selectedOrderId = null;
 
-        const header = document.createElement("div");
-        header.classList.add("orders-header");
+  function renderOrders(snapshot) {
+    ordersContainer.innerHTML = "";
+    snapshot.forEach(docSnap => {
+      const order = docSnap.data();
+      const orderId = docSnap.id;
 
-        const tableLabel = document.createElement("span");
-        tableLabel.innerText = `Table #${orders.table}`;
-
-        const itemCount = document.createElement("span");
-        itemCount.innerText = `${orders.items.length} items`;
-
-        const doneBtn = document.createElement("button");
-        doneBtn.className = "done-btn";
-        doneBtn.innerText = "✅";
-        doneBtn.title = "Mark as Done";
-        doneBtn.onclick = () => {
-          selectedOrdersKey = keys[index];
-          openModal();
-        };
-
-        const headerLeft = document.createElement("div");
-        headerLeft.style.flex = "1";
-        headerLeft.appendChild(tableLabel);
-
-        const headerRight = document.createElement("div");
-        headerRight.style.display = "flex";
-        headerRight.style.alignItems = "center";
-        headerRight.appendChild(itemCount);
-        headerRight.appendChild(doneBtn);
-
-        header.appendChild(headerLeft);
-        header.appendChild(headerRight);
-        ordersDiv.appendChild(header);
-
-        orders.items.forEach(item => {
-          const itemDiv = document.createElement("div");
-          itemDiv.classList.add("item");
-          itemDiv.innerHTML = `<span>${item.name}</span><span>Qty: ${item.qty}</span>`;
-          ordersDiv.appendChild(itemDiv);
-        });
-
-        ordersContainer.appendChild(ordersDiv);
-      });
-    }
-
-    function openModal() {
-      document.getElementById("confirmModal").style.display = "flex";
-    }
-
-    function closeModal() {
-      document.getElementById("confirmModal").style.display = "none";
-      selectedOrderKey = null;
-    }
-
-    function confirmDelete() {
-      if (selectedOrderKey) {
-        const orderRef = ref(db, 'orders/' + selectedOrderKey);
-        remove(orderRef).then(() => {
-          closeModal();
-        });
-      }
-    }
-
-    const ordersRef = ref(db, 'orders');
-    onValue(ordersRef, (snapshot) => {
-      const data = snapshot.val();
-      orders = [];
-      keys = [];
-      for (const key in data) {
-        orders.push(data[key]);
-        keys.push(key);
-      }
-      renderOrders();
-    });
-  </script>
-
-  <script>
-  let selectedOrderIndex = null;
-
-  function getOrders() {
-    return JSON.parse(localStorage.getItem("orders") || "[]");
-  }
-
-  function setOrders(orders) {
-    localStorage.setItem("orders", JSON.stringify(orders));
-  }
-
-  function notifyManager(message) {
-    const messages = JSON.parse(localStorage.getItem("managerMessages") || "[]");
-    messages.push({ message, time: new Date().toLocaleTimeString() });
-    localStorage.setItem("managerMessages", JSON.stringify(messages));
-  }
-
-  function renderOrders() {
-    const container = document.getElementById("ordersContainer");
-    container.innerHTML = "";
-
-    const orders = getOrders();
-    orders.forEach((order, index) => {
       const orderDiv = document.createElement("div");
       orderDiv.classList.add("order");
 
@@ -321,10 +221,10 @@
       const doneBtn = document.createElement("button");
       doneBtn.className = "done-btn";
       doneBtn.innerText = "✅";
-      doneBtn.title = "Mark as Done";
+      doneBtn.title = "Mark as Served";
       doneBtn.onclick = () => {
-        selectedOrderIndex = index;
-        openModal();
+        selectedOrderId = orderId;
+        confirmModal.style.display = "flex";
       };
 
       const headerLeft = document.createElement("div");
@@ -344,42 +244,35 @@
       order.items.forEach(item => {
         const itemDiv = document.createElement("div");
         itemDiv.classList.add("item");
-        itemDiv.innerHTML = `<span>${item.name}</span><span>Qty: ${item.qty}</span>`;
+        itemDiv.innerHTML = `<span>${item.name}</span><span>Qty: ${item.quantity}</span>`;
         orderDiv.appendChild(itemDiv);
       });
 
-      container.appendChild(orderDiv);
+      ordersContainer.appendChild(orderDiv);
     });
   }
 
-  function openModal() {
-    document.getElementById("confirmModal").style.display = "flex";
-  }
-
   function closeModal() {
-    document.getElementById("confirmModal").style.display = "none";
-    selectedOrderIndex = null;
+    confirmModal.style.display = "none";
+    selectedOrderId = null;
   }
 
-  function confirmDelete() {
-    let orders = getOrders();
-    if (selectedOrderIndex !== null && orders[selectedOrderIndex]) {
-      let finishedOrder = orders[selectedOrderIndex];
-      orders.splice(selectedOrderIndex, 1);
-      setOrders(orders);
-      notifyManager(`✅ Order Finished Table #${finishedOrder.table}`);
-      selectedOrderIndex = null;
+  async function confirmDelete() {
+    if (selectedOrderId) {
+      await deleteDoc(doc(db, "orders", selectedOrderId));
       closeModal();
-      renderOrders();
     }
   }
 
-  // Auto-refresh orders every second (simulate real-time)
-  setInterval(() => {
-    renderOrders();
-  }, 1000);
+  // Real-time listener
+  const ordersRef = collection(db, "orders");
+  onSnapshot(ordersRef, snapshot => {
+    renderOrders(snapshot);
+  });
 
-  renderOrders();
+  // Attach modal control to window
+  window.closeModal = closeModal;
+  window.confirmDelete = confirmDelete;
 </script>
 
 </body>
