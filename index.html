@@ -200,6 +200,21 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
+    @keyframes pulse {
+  0% {
+    transform: scale(1);
+    text-shadow: 0 0 5px #ffff00, 0 0 10px #ffff00;
+  }
+  50% {
+    transform: scale(1.1);
+    text-shadow: 0 0 10px #ffff00, 0 0 20px #ffff00;
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: 0 0 5px #ffff00, 0 0 10px #ffff00;
+  }
+}
+
   </style>
 </head>
 <body>
@@ -367,14 +382,20 @@ confirmBtn.addEventListener('click', () => {
   thankYou.style.display = 'flex';
 
   // Optional: Hide thank-you message after 5 seconds
-  setTimeout(() => {
-    thankYou.style.display = 'none';
-  }, 5000);
-});
-
-cancelBtn.addEventListener('click', () => {
-  popup.style.display = 'none';
-});
+    setTimeout(() => {
+  thankYouMessage.innerHTML = `
+    <div style="text-align:center;">
+      <div style="font-size:50px; color:#ffff00; animation: pulse 1s infinite;">
+        🕒
+      </div>
+      <p style="font-size:24px; color:#ffff00;">Tracking Order for Table ${localStorage.getItem('tableNumber')}</p>
+      <ul style="list-style:none; padding:0; color:#fff; font-size:18px;">
+        ${Object.entries(cart).map(([item, qty]) => `<li>${item} x ${qty}</li>`).join('')}
+      </ul>
+      <p style="margin-top:10px; color:#03eaff; font-size:20px;">Total: ₹${totalSpan.textContent}</p>
+    </div>
+  `;
+}, 2500);
 
   </script>
 
