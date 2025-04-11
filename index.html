@@ -378,24 +378,50 @@ cancelBtn.addEventListener('click', () => {
 
   </script>
 
-  <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+  <!-- Firebase SDKs -->
+<script type="module">
+  // Import Firebase modules from CDN
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  // Your web app's Firebase configuration
+  // Your Firebase configuration
   const firebaseConfig = {
-    apiKey: "AIzaSyDilZ_B4vbKN_xp7wQ5g_t-4GsBa9G9XVo",
-    authDomain: "zenoqr-a6a34.firebaseapp.com",
-    projectId: "zenoqr-a6a34",
-    storageBucket: "zenoqr-a6a34.firebasestorage.app",
-    messagingSenderId: "330735922897",
-    appId: "1:330735922897:web:925a0dc805d69ed6831ff0"
+  apiKey: "AIzaSyDilZ_B4vbKN_xp7wQ5g_t-4GsBa9G9XVo",
+  authDomain: "zenoqr-a6a34.firebaseapp.com",
+  projectId: "zenoqr-a6a34",
+  storageBucket: "zenoqr-a6a34.firebasestorage.app",
+  messagingSenderId: "330735922897",
+  appId: "1:330735922897:web:925a0dc805d69ed6831ff0"
   };
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Example: Add order on confirm
+  document.getElementById("confirm-btn").addEventListener("click", async () => {
+    const tableNumber = localStorage.getItem("tableNumber");
+    const order = {
+      table: tableNumber,
+      timestamp: new Date().toISOString(),
+      items: [] // push order details here
+    };
+    document.querySelectorAll(".menu-list li").forEach((li) => {
+      const name = li.textContent.split(" - ₹")[0].trim();
+      const qty = parseInt(li.querySelector(".quantity").textContent);
+      if (qty > 0) {
+        order.items.push({ name, quantity: qty, price: prices[name] });
+      }
+    });
+    try {
+      await addDoc(collection(db, "orders"), order);
+      console.log("Order saved!");
+    } catch (e) {
+      console.error("Error saving order:", e);
+    }
+  });
 </script>
+
+  
 </body>
 </html>
