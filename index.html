@@ -271,16 +271,6 @@
   <div id="thank-you-text" style="animation: pop 1s ease-out forwards;">Thank you for your order!<br>Your food will be served shortly 😊</div>
 </div>
 
-
-  <!-- Hidden section: Order Tracker Page -->
-<div id="order-tracker" style="display:none; text-align:center; margin-top: 50px;">
-  <h2 style="color: #ffeb3b; font-size: 30px;">⏱️ Order Timer</h2>
-  <h1 id="stopwatch" style="font-size: 60px; color: #ffeb3b; text-shadow: 0 0 10px #ffeb3b;">00:00</h1>
-  <h2 style="color: #76ff03;">🧾 Your Order Summary</h2>
-  <ul id="order-summary" style="list-style:none; padding:0; color:white; font-size:18px;"></ul>
-</div>
-
-
   
   <script>
     function getTableNumber() {
@@ -345,79 +335,129 @@
         cart[itemName] = (cart[itemName] || 0) + 1;
         qtySpan.textContent = cart[itemName];
         updateBill();
-  
-  // Stopwatch logic
-  let stopwatchInterval;
-  function startStopwatch() {
-    let seconds = 0;
-    stopwatchInterval = setInterval(() => {
-      seconds++;
-      const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-      const secs = String(seconds % 60).padStart(2, '0');
-      document.getElementById('stopwatch').textContent = `${mins}:${secs}`;
-    }, 1000);
-  }
+      });
+    });
 
-  function showOrderTracker() {
-    document.querySelector("body").innerHTML = ""; // Clear old content
-    document.body.appendChild(document.getElementById("order-tracker"));
-    document.getElementById("order-tracker").style.display = "block";
-    startStopwatch();
+    minusBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const li = btn.closest("li");
+        const itemName = li.textContent.split(" - ₹")[0].trim();
+        const qtySpan = li.querySelector(".quantity");
 
-    // Copy cart to summary
-    const summary = document.getElementById("order-summary");
-    summary.innerHTML = "";
+        if (cart[itemName] > 0) {
+          cart[itemName]--;
+          qtySpan.textContent = cart[itemName];
+          updateBill();
+        }
+      });
+    });
+
+    const placeOrderBtn = document.querySelector('.place-order');
+const popup = document.getElementById('confirmation-popup');
+const confirmBtn = document.getElementById('confirm-btn');
+const cancelBtn = document.getElementById('cancel-btn');
+const thankYou = document.getElementById('thank-you-message');
+
+placeOrderBtn.addEventListener('click', () => {
+  popup.style.display = 'flex';
+});
+
+confirmBtn.addEventListener('click', () => {
+  popup.style.display = 'none';
+  thankYou.style.display = 'flex';
+
+  // Optional: Hide thank-you message after 5 seconds
+  setTimeout(() => {
+    thankYou.style.display = 'none';
+  }, 5000);
+});
+
+cancelBtn.addEventListener('click', () => {
+  popup.style.display = 'none';
+});
+
+  </script>
+
+  <script>
+  // Continue from your 'updateBill()' function
+  function updateBill() {
+    billList.innerHTML = "";
+    let total = 0;
     for (let item in cart) {
       if (cart[item] > 0) {
         const li = document.createElement("li");
-        li.textContent = `${item} x ${cart[item]} = ₹${cart[item] * prices[item]}`;
-        summary.appendChild(li);
+        li.textContent = `${item} x ${cart[item]} - ₹${cart[item] * prices[item]}`;
+        billList.appendChild(li);
+        total += cart[item] * prices[item];
       }
     }
+    totalSpan.textContent = total;
   }
 
-  plusBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const li = btn.closest("li");
-      const itemName = li.textContent.split(" - ₹")[0].trim();
-      const qtySpan = li.querySelector(".quantity");
-
-      cart[itemName] = (cart[itemName] || 0) + 1;
-      qtySpan.textContent = cart[itemName];
+  // Add Event Listeners for + and -
+  plusBtns.forEach(btn => {
+    btn.addEventListener("click", function () {
+      const quantityEl = this.previousElementSibling;
+      const itemName = this.closest("li").childNodes[0].textContent.trim().split(" - ")[0];
+      let currentQty = parseInt(quantityEl.textContent);
+      currentQty++;
+      quantityEl.textContent = currentQty;
+      cart[itemName] = currentQty;
       updateBill();
     });
   });
 
-  minusBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const li = btn.closest("li");
-      const itemName = li.textContent.split(" - ₹")[0].trim();
-      const qtySpan = li.querySelector(".quantity");
-
-      if (cart[itemName] > 0) {
-        cart[itemName]--;
-        qtySpan.textContent = cart[itemName];
+  minusBtns.forEach(btn => {
+    btn.addEventListener("click", function () {
+      const quantityEl = this.nextElementSibling;
+      const itemName = this.closest("li").childNodes[0].textContent.trim().split(" - ")[0];
+      let currentQty = parseInt(quantityEl.textContent);
+      if (currentQty > 0) {
+        currentQty--;
+        quantityEl.textContent = currentQty;
+        cart[itemName] = currentQty;
         updateBill();
       }
     });
   });
 
-  // Order Button Logic
-  document.querySelector(".place-order").addEventListener("click", () => {
-    const confirmation = confirm("⚠️ Confirm your order?");
-    if (confirmation) {
-      // Thank you animation
-      const thankYou = document.createElement("div");
-      thankYou.innerHTML = "<h1 style='text-align:center; font-size:40px; margin-top:50px; color:#ffeb3b; text-shadow: 0 0 10px #ffeb3b;'>Thank you for your order!<br>Your food will be served shortly 😋</h1>";
-      document.body.innerHTML = "";
-      document.body.appendChild(thankYou);
+  // Place Order Popup Logic
+  const placeOrderBtn = document.querySelector(".place-order");
+  const popup = document.getElementById("confirmation-popup");
+  const confirmBtn = document.getElementById("confirm-btn");
+  const cancelBtn = document.getElementById("cancel-btn");
+  const thankYouMessage = document.getElementById("thank-you-message");
 
-      setTimeout(() => {
-        showOrderTracker();
-      }, 3000); // Delay before showing order tracker
+  placeOrderBtn.addEventListener("click", () => {
+    if (Object.keys(cart).length === 0 || Object.values(cart).every(qty => qty === 0)) {
+      alert("Please select at least one item before placing an order.");
+      return;
     }
+    popup.style.display = "flex";
   });
 
-  </script>
+  cancelBtn.addEventListener("click", () => {
+    popup.style.display = "none";
+  });
+
+  confirmBtn.addEventListener("click", () => {
+    popup.style.display = "none";
+    thankYouMessage.style.display = "flex";
+
+    // Add tracker after 2.5 seconds
+    setTimeout(() => {
+      thankYouMessage.innerHTML = `
+        <div style="text-align:center;">
+          <p style="font-size:24px; color:#ffff00;">🕒 Tracking Order for Table ${localStorage.getItem('tableNumber')}</p>
+          <ul style="list-style:none; padding:0; color:#fff;">
+            ${Object.entries(cart).map(([item, qty]) => `<li>${item} x ${qty}</li>`).join('')}
+          </ul>
+          <p style="margin-top:10px; color:#03eaff;">Total: ₹${totalSpan.textContent}</p>
+        </div>
+      `;
+    }, 2500);
+  });
+</script>
+
 </body>
 </html>
